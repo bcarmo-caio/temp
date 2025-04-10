@@ -1,0 +1,1650 @@
+### [BEGIN COMMON]
+# post_format_install
+#{{{
+# post_format_install MUST be idempotent
+function post_format_install() {
+  # In all POSIX-compliant shells, variables are global
+  # by default, and loops do not have their own scope.
+  #
+  # So, in order to not let any variable from called function
+  # have their scope escaped, all function MUST be called
+  # using subshells: instead of function, (function) is used.
+  # Also unset loop control variables after calling (function)
+  # E.g.:
+  # for i in `ls | head`
+  # do
+  #   (func i)
+  #   unset i
+  # done
+  #
+  # Also when setting local to function variable, do declare them all together.
+
+  # Do NOT use variables not set
+  set -u
+
+  local FUNCTIONS=
+
+  # Test bash_aliases sanity
+  source ~/.bash_aliases || { echo '~/.bash_aliases malformed'; return; }
+
+  FUNCTIONS=`grep -oE '^function _post_format_install_[a-zA-Z_]+\(\) \{$' ~/.bash_aliases \
+    | grep -v '_sanity_check() {' \
+    | awk -F' ' '{print $2}' \
+    | tr -d '()'`
+
+  for FUNCTION in $FUNCTIONS
+  do
+    ($FUNCTION)
+    unset FUNCTION
+  done
+
+  echo -e '\n\n\n'
+  echo -e "All functions bellow have been called"
+  echo $FUNCTIONS | tr ' ' '\n'
+  echo
+
+  FUNCTIONS=`grep -oE '^function _post_format_install_[a-zA-Z_]+_sanity_check\(\) \{$' ~/.bash_aliases \
+    | awk -F' ' '{print $2}' \
+    | tr -d '()'`
+
+  for FUNCTION in $FUNCTIONS
+  do
+   ($FUNCTION)
+   unset FUNCTION
+  done
+
+  echo -e '\n\n\n'
+  echo -e "All functions bellow have been called"
+  echo $FUNCTIONS | tr ' ' '\n'
+
+  echo
+  set +u
+  echo 'All done'
+}; export post_format_install
+#}}}
+
+# _post_format_install_common() {
+#{{{
+function _post_format_install_common() {
+  sudo apt update
+  sudo apt upgrade -y
+  sudo apt install -y \
+    apt-file \
+    arandr \
+    autoconf `# Added de alegre, uma hora vou usar` \
+    automake `# Added de alegre, uma hora vou usar` \
+    bison `# Added de alegre, uma hora vou usar` \
+    build-essential `# compile python and other` \
+    ca-certificates `# docker and others` \
+    cmus \
+    curl \
+    debian-keyring \
+    ffmpeg \
+    flex `# Added de alegre, uma hora vou usar` \
+    g++ `# compile python and other` \
+    gcc `# compile python and other` \
+    gdb `# compile python and other` \
+    git \
+    gitk \
+    gnome-calculator \
+    htop \
+    jq \
+    lcov `# compile python and other` \
+    libbz2-dev `# compile python and other` \
+    libffi-dev `# compile python and other` \
+    libgdbm-compat-dev `# compile python and other` \
+    libgdbm-dev `# compile python and other` \
+    liblzma-dev `# compile python and other` \
+    libncurses-dev `# compile python and other` \
+    libreadline-dev `# compile python and other` \
+    libsqlite3-dev `# compile python and other` \
+    libssl-dev `# compile python and other` \
+    lnav `# ncurses logs viewer` \
+    lzma `# compile python and other` \
+    lzma-dev `# compile python and other` \
+    make `# compile python and other` \
+    mate-terminal \
+    meld \
+    mplayer \
+    ncdu \
+    pkg-config `# compile python and other` \
+    psmisc \
+      `# - fuser: identifies processes that are using files or sockets.` \
+      `# - killall: kills processes by name (e.g. "killall -HUP named").` \
+      `# - peekfd: shows the data traveling over a file descriptor.` \
+      `# - prtstat: print the contents of /proc/<pid>/stat` \
+      `# - pstree: shows currently running processes as a tree.` \
+      `# https://packages.debian.org/<release>/psmisc` \
+    pwgen \
+    rsync \
+    strace \
+    tk-dev `# compile python and other` \
+    tmux \
+    tree \
+    unrar \
+    unzip \
+    uuid-dev `# compile python and other` \
+    vim \
+    w3m \
+    webp-pixbuf-loader `# load webp files` \
+    wmctrl \
+    x11-utils \
+      `# - appres, editres, listres and viewres, which query the X resource database` \
+      `# - luit, a filter that can be run between an arbitrary application and a UTF-8 terminal emulator` \
+      `# - xdpyinfo, a display information utility for X` \
+      `# - xdriinfo, query configuration information of DRI drivers` \
+      `# - xev, an X event displayer` \
+      `# - xfd, a tool that displays all the glyphs in a given X font` \
+      `# - xfontsel, a tool for browsing and selecting X fonts` \
+      `# - xkill, a tool for terminating misbehaving X clients` \
+      `# - xlsatoms, which lists interned atoms defined on an X server` \
+      `# - xlsclients, which lists client applications running on an X display` \
+      `# - xlsfonts, a server font list displayer` \
+      `# - xmessage, a tool to display message or dialog boxes` \
+      `# - xprop, a property displayer for X` \
+      `# - xvinfo, an Xv extension information utility for X` \
+      `# - xwininfo, a window information utility for X` \
+      `# https://packages.debian.org/<release>/x11-utils` \
+    x11-xkb-utils \
+      `# - setxkbmap is a tool to query and change the current XKB map.` \
+      `# - xkbbell generates a bell event through the keyboard.` \
+      `# - xkbcomp is a tool to compile XKB definitions into map files the server can use.` \
+      `# - xkbevd is an experimental tool to listen for certain XKB events and execute defined triggers when actions occur.` \
+      `# - xkbprint is a tool to generate an image with the physical representation of the keyboard as XKB sees it.` \
+      `# - xkbutils contains a number of client-side utilities for XKB, the X11 keyboard extension.` \
+      `# - xkbvleds shows the changing status of keyboard LEDs.` \
+      `# - xkbwatch shows the changing status of modifiers and LEDs.` \
+      `# https://packages.debian.org/<release>/x11-xkb-utils` \
+    xbindkeys \
+    xclip \
+    xinput \
+    xvfb `# de alegre junto com python deps` \
+    zenity \
+    zlib1g-dev `# compile python and other` \
+    zip
+
+  sudo apt-file update
+  sudo install -m 0755 -d /etc/apt/keyrings
+
+  # BEGIN pyenv
+  install_pyenv
+  # END pyenv
+
+  # BEGIN git-aware-prompt
+  install_git_aware_prompt
+  # END git-aware-prompt
+
+  # BEGIN create ~/.inputrc
+  create_inputrc
+  # END create ~/.inputrc
+
+  # BEGIN create ~/.tmux.conf ~/.tmux.init
+  create_tmux_conf
+  create_tmux_init
+  # END create ~/.tmux.conf ~/.tmux.init
+
+  # BEGIN ~/my_local/bin
+  install_lessfilter
+  install_exchange_rate
+  # END ~/my_local/bin
+
+  # BEGIN Docker Compose
+  sudo apt install -y docker-compose-plugin
+  # END Docker Compose
+}; export _post_format_install_common
+
+function _post_format_install_common_sanity_check() {
+  local answer=
+
+  # BEGIN pyenv
+  local PYENV_VIRTUAL_ENV_INSTALLATION_IS_SANE=false
+  local FOUND_PREVIOUS_PYTHON_VIRTUAL_ENVS=false
+  local REBUILT_PYTHON_VIRTUAL_ENVS=false
+  local PYTHON_VERSIONS=
+  local PYTHON_VERSION=
+  local PYTHON_VIRTUAL_ENVS=
+  local PYTHON_VIRTUAL_ENV=
+  local VIRT_ENV_NAME=
+  local VIRT_ENV_VERSION=
+
+  # Conditions to pyenv installation be sane along with virtualenv plugin
+  # PYENV_ROOT environment variable is set
+  # ~/.pyenv directory is found
+  # pyenv binary is found
+  # pyenv virtualenv is found
+  if [ -n "${PYENV_ROOT:-}" ] && \
+     [ -d ~/.pyenv ] && \
+     pyenv --version > /dev/null 2>&1 && \
+     pyenv virtualenv --version > /dev/null 2>&1
+  then
+    PYENV_VIRTUAL_ENV_INSTALLATION_IS_SANE=true
+  fi
+
+  if ! $PYENV_VIRTUAL_ENV_INSTALLATION_IS_SANE
+  then
+    echo -e '!!! WARNING (pyenv-virtualenv) !!!\n' > /dev/stderr
+    echo Please check manually your installation. Here is current state: > /dev/stderr
+
+    if [ -n "${PYENV_ROOT:-}" ]
+    then
+      echo PYENV_ROOT environment variable is set. > /dev/stderr
+    else
+      echo PYENV_ROOT environment variable not is set. > /dev/stderr
+    fi
+
+    if ls -a ~/ | grep -Eq '^.pyenv$'
+    then
+      echo Default pyenv root ~/.pyenv is present. > /dev/stderr
+    else
+      echo Default pyenv root ~/.pyenv is not present. > /dev/stderr
+    fi
+
+    if pyenv --version > /dev/null 2>&1
+    then
+      echo Binary pyenv is found. > /dev/stderr
+    else
+      echo Binary pyenv is not found. > /dev/stderr
+    fi
+
+    if pyenv virtualenv --version > /dev/null 2>&1
+    then
+      echo Plugin virtualenv is found. > /dev/stderr
+    else
+      echo Plugin virtualenv is found. > /dev/stderr
+    fi
+
+    echo
+    echo "Please check the following instruction found in" > /dev/stderr
+    echo 'https://github.com/pyenv/pyenv' > /dev/stderr
+    echo 'and' > /dev/stderr
+    echo 'https://github.com/pyenv/pyenv-virtualenv' > /dev/stderr
+  fi
+
+  if $PYENV_VIRTUAL_ENV_INSTALLATION_IS_SANE && \
+     pyenv versions --bare | grep -q .
+  then
+    REBUILT_PYTHON_VIRTUAL_ENVS=true
+  fi
+
+  if $PYENV_VIRTUAL_ENV_INSTALLATION_IS_SANE && \
+     $REBUILT_PYTHON_VIRTUAL_ENVS
+  then
+    PYTHON_VERSIONS=`pyenv versions --skip-envs --skip-aliases --bare | sort -rn`
+
+    # Virtual environment can not have white spaces
+    # $pyenv virtualenv 3.9.18 'foo bar'
+    # pyenv-virtualenv: no whitespace allowed in virtualenv name.
+    #
+    # Virtual environment can not have slashes
+    # $ pyenv virtualenv 3.9.18 'foo/bar'
+    # pyenv-virtualenv: no slash allowed in virtualenv name.
+    #
+    #
+    # We know that them command
+    # $pyenv virtualenvs --bare --skip-aliases | sort -rn
+    # 3.9.18/envs/foo
+    # 3.9.18/envs/global
+    # 3.12.1/envs/bar
+    PYTHON_VIRTUAL_ENVS=`pyenv virtualenvs --bare --skip-aliases | sort -rn | sed 's|/.*/|/|'`
+
+    echo -e '!   Reinstalling python virtual environments    !\n'
+    echo Listing all virtual environments:
+    pyenv versions
+    echo -e '\n'
+    echo 'Unless your new installation have the same libraries as the old one, you really should proceed.'
+    echo -e 'The script will\n'
+    echo '* Remove the following virtual environments:'
+    for PYTHON_VIRTUAL_ENV in $PYTHON_VIRTUAL_ENVS
+    do
+      (
+        VIRT_ENV_NAME=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $2}'`
+        echo "$VIRT_ENV_NAME"
+      )
+      unset PYTHON_VIRTUAL_ENV
+    done
+    unset PYTHON_VIRTUAL_ENV
+    echo
+    echo '* Remove the following versions:'
+    echo "$PYTHON_VERSIONS" | tr ' ' '\n'
+    echo
+    echo '* Install the following versions:'
+    echo "$PYTHON_VERSIONS" | tr ' ' '\n'
+    echo
+    echo '* Install the following virtual environments:'
+    for PYTHON_VIRTUAL_ENV in $PYTHON_VIRTUAL_ENVS
+    do
+      (
+        VIRT_ENV_NAME=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $2}'`
+        VIRT_ENV_VERSION=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $1}'`
+        echo "$VIRT_ENV_NAME -> $VIRT_ENV_VERSION"
+      )
+      unset PYTHON_VIRTUAL_ENV
+    done
+    echo
+
+    while true
+    do
+      read -p 'Please enter YES or no: ' answer
+      case $answer in
+        YES)
+          for PYTHON_VIRTUAL_ENV in $PYTHON_VIRTUAL_ENVS
+          do
+            (
+              VIRT_ENV_NAME=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $2}'`
+              pyenv uninstall --force "$VIRT_ENV_NAME"
+              echo "pyenv virtualenv: $VIRT_ENV_NAME uninstalled"
+            )
+            unset PYTHON_VIRTUAL_ENV
+          done
+
+          for PYTHON_VERSION in $PYTHON_VERSIONS
+          do
+            (pyenv uninstall --force "$PYTHON_VERSION")
+            unset PYTHON_VERSION
+          done
+
+          echo
+          echo Updating pyenv...
+          update_pyenv
+          echo -e 'Updated.\n'
+
+          for PYTHON_VERSION in $PYTHON_VERSIONS
+          do
+            (pyenv install "$PYTHON_VERSION")
+            unset PYTHON_VERSION
+          done
+
+          for PYTHON_VIRTUAL_ENV in $PYTHON_VIRTUAL_ENVS
+          do
+            (
+              VIRT_ENV_NAME=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $2}'`
+              VIRT_ENV_VERSION=`echo "$PYTHON_VIRTUAL_ENV" | awk -F'/' '{print $1}'`
+              echo "Creating virtualenv $VIRT_ENV_NAME -> $VIRT_ENV_VERSION."
+              pyenv virtualenv "$VIRT_ENV_VERSION" "$VIRT_ENV_NAME"
+              echo "Created virtualenv $VIRT_ENV_NAME -> $VIRT_ENV_VERSION."
+            )
+            unset PYTHON_VIRTUAL_ENV
+          done
+
+          echo
+          echo Relisting all virtual environments:
+          pyenv versions
+          echo
+          echo 'Done with pyenv.'
+          echo 'Please reinstall all dependencies you had in each environment, update pip and setuptools.'
+          break
+          ;;
+        no)
+          break
+          ;;
+        *)
+          echo "Invalid input. Please enter YES or no." > /dev/stderr
+          ;;
+      esac
+      unset answer
+    done
+  fi
+  # END pyenv
+
+  # BEGIN Docker
+  # Move /var/lib/docker to /home/docker
+  local DOCKER_DAEMON_JSON_FILE=/etc/docker/daemon.json
+  local DOCKER_DEFAULT_HOME=/var/lib/docker
+  local DOCKER_NEW_HOME=/home/docker
+  local DOCKER_DAEMON_JSON_CONTENT=`echo \
+    { \
+    \"log-driver\": \"json-file\", \
+    \"log-opts\": { \
+        \"max-size\": \"10m\", \
+        \"max-file\": \"3\" \
+      }, \
+      \"data-root\": \"$DOCKER_NEW_HOME\" \
+    } \
+  `
+
+  echo
+  echo -e '!   Docker Configuration   !\n'
+  echo 'Normally docker "home" (the directory holding all containers, images, volumes...)'
+  echo "is localed at $DOCKER_DEFAULT_HOME. If you do know that $DOCKER_DEFAULT_HOME is empty"
+  echo 'or perhaps with just some files right after installing docker, you can decide to'
+  echo "to change $DOCKER_DEFAULT_HOME to $DOCKER_NEW_HOME setting this information in $DOCKER_DAEMON_JSON_FILE"
+  echo
+  echo "Do you want to set docker "home" to $DOCKER_NEW_HOME?"
+  echo "$DOCKER_DEFAULT_HOME WILL be removed"
+  sudo du -h "$DOCKER_DEFAULT_HOME"
+  while true
+  do
+    read -p 'Please enter YES or no: ' answer
+    case $answer in
+      YES)
+        if sudo test -e $DOCKER_DAEMON_JSON_FILE || sudo test -L $DOCKER_DAEMON_JSON_FILE; then
+          echo -e '!!! WARNING (Docker) !!!\n'
+          echo File $DOCKER_DAEMON_JSON_FILE exists. Be sure that it contains the
+          echo -e 'following content:\n'
+          echo $DOCKER_DAEMON_JSON_CONTENT | jq
+        else
+          sudo systemctl stop docker.socket
+          sudo systemctl stop docker.service
+          sudo systemctl stop containerd.service
+          sudo rm -rf "$DOCKER_DEFAULT_HOME"
+          echo $DOCKER_DAEMON_JSON_CONTENT | jq | sudo tee $DOCKER_DAEMON_JSON_FILE
+          sudo systemctl start containerd.service
+          sudo systemctl start docker.service
+          sudo systemctl start docker.socket
+        fi
+        break
+        ;;
+      no)
+        break
+        ;;
+      *)
+        echo "Invalid input. Please enter YES or no."
+        ;;
+    esac
+    unset answer
+  done
+  echo Remember that you have to logout/login to use docker as you current user
+  # END Docker
+}; export _post_format_install_common_sanity_check
+#}}}
+
+alias ip='ip -c'
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+alias prepare_ctrl_v='xclip -selection c'
+
+function install_asdf() {
+  local ASDF_DEFAULT_HOME=~/.asdf
+  local ASDF_NODE_VERSIONS=
+  if asdf --version > /dev/null;
+  then
+    ASDF_NODE_VERSIONS=`asdf list nodejs | egrep -o '([0-9]+\.)+[0-9]+'`
+    echo -e "Found node versions:\n$ASDF_NODE_VERSIONS"
+  else
+    cat << 'EOF' >> ~/.bashrc
+
+# asdf-vm
+. "$HOME/.asdf/asdf.sh"
+. "$HOME/.asdf/completions/asdf.bash"
+EOF
+  fi
+
+  rm -rf "$ASDF_DEFAULT_HOME"
+  git clone https://github.com/asdf-vm/asdf.git "$ASDF_DEFAULT_HOME" --branch v0.14.0
+  source ~/.bashrc
+  asdf update
+  asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
+  for NODE_VERSION in $ASDF_NODE_VERSIONS;
+  do
+    (
+      echo "Installing node version $NODE_VERSION"
+      asdf install nodejs "$NODE_VERSION"
+    )
+    unset NODE_VERSION
+  done
+}; export install_asdf
+
+function create_inputrc() {
+  if [ -f ~/.inputrc ]
+  then
+    echo -e '!!! WARNING (~/.inputrc) !!!\n' > /dev/stderr
+    echo File was not empty. Resetting it...: > /dev/stderr
+    echo '------------ BEGIN PREVIOUS CONTENT ~/.inputrc ------------' > /dev/stderr
+    cat ~/.inputrc > /dev/stderr
+    echo '------------ END   PREVIOUS CONTENT ~/.inputrc ------------' > /dev/stderr
+  fi
+  cat << 'EOF' > ~/.inputrc
+C-P: backward-kill-line
+C-L: clear-screen
+EOF
+  echo '------------ BEGIN NEW CONTENT ~/.inputrc ------------'
+  cat ~/.inputrc
+  echo '------------ END   NEW CONTENT ~/.inputrc ------------'
+}; export create_inputrc
+
+
+function create_tmux_conf() {
+  cat << 'EOF' > ~/.tmux.conf
+# Some [bind] options explanation
+# [bind -n] -> Alias to [bind -T root]
+# [bind -r] -> Can be repeated. E.g., hold arrow key to expand pane to the up, left, right, down
+# [bind -T <table>] -> [-T] means table. If no table is explicited using [-T <table>],
+#   tmux uses [-T prefix] i.e. [prefix] is the default table.
+#   Two table examples are [prefix] and [root].
+#   If [root] table is used, it is not needed to use <prefix> in tmux to execute the command.
+
+set -g prefix C-Space
+
+# [xclip] is needed to copy to clibpoard and not only to tmux-buffer
+run "if ! xclip -h > /dev/null 2>&1; then zenity --error --text='xclip is not installed. Copy to clipboard is disabled'; fi"
+
+set -g history-limit 20000
+
+# Binded pane selection VIM like
+setw -g mode-keys vi
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'xclip -in -selection clipboard'
+bind k select-pane -U
+bind j select-pane -D
+bind h select-pane -L
+bind l select-pane -R
+
+# choose window
+bind-key "'" choose-window
+
+bind '"' split-window -c "#{pane_current_path}"
+bind % split-window -h -c "#{pane_current_path}"
+bind c new-window -c "#{pane_current_path}"
+
+bind K confirm kill-window
+
+# Prevent space being hit twice and it getting a new layout
+unbind Space
+
+# windows gapless sequence
+set-option -g renumber-windows on
+
+set -g status-bg green
+set -g status-fg black
+
+bind -n C-a setw synchronize-panes
+EOF
+}; export create_tmux_conf;
+
+function create_tmux_init() {
+  cat << 'EOF' > ~/.tmux.init2
+#!/bin/bash
+
+RESOLUTION=`xrandr | grep \* | awk '{print $1}'`
+case $RESOLUTION in
+    "2560x1080")
+        H_LINES=200
+        V_LINES=14
+    ;;
+	"1920x1080")
+        H_LINES=180
+        V_LINES=14
+	;;
+    *)
+        printf 'Resolution not set. Assuming 1920x1080.\n'
+        H_LINES=180
+        V_LINES=14
+    ;;
+esac
+
+
+TMUX() {
+    tmux $@ -t $SESS_NAME
+    echo "tmux $@ -t $SESS_NAME" >> /tmp/xuxu.log
+}
+
+send_keys() {
+    tmux send-keys -t $SESS_NAME "$@"
+}
+
+new_session() {
+  echo "creating $SESS_NAME" >> /tmp/xuxu.log
+    tmux new-session -d -s $SESS_NAME
+}
+
+#SESS_NAME=main
+#new_session
+#  TMUX split-window -h
+#  TMUX split-window -v
+#  send_keys 'sudo su -' Enter
+#SESS_NAME=insert_sess_name_here
+#new_session
+#  send_keys 'cd_bla_bla_bla; reset' Enter
+#  #send_keys 'docker stop `docker ps -qa`' Enter
+#  #send_keys 'docker-compose up' Enter
+#  send_keys 'docker-compose logs -f' Enter
+#  TMUX split-window -v -l $H_LINES \; resize-pane -y 25
+#  send_keys 'cd blebleble; reset' Enter
+#  #send_keys 'CONTAINER_NAME=`docker ps | grep container_name_you_want | cut -d" " -f1`' Enter
+#  #send_keys 'PGPASSWORD=pass' Enter
+#  #send_keys 'sleep 8; docker exec -ti $CONTAINER_NAME psql --db dbname --user user' Enter
+#  send_keys 'psql --db dbname --user user --host localhost --port 5433' Enter
+#  TMUX split-window -v -l $V_LINES \; resize-pane -y 25
+#  send_keys 'cd ~/aaaaaa; reset' Enter
+#TMUX new-window
+#  send_keys 'cd aaaaaaaaa' Enter
+
+SESS_NAME=main
+new_session
+  TMUX split-window -h
+  TMUX split-window -v
+  send_keys 'sudo su -' Enter
+SESS_NAME=other_sess_name
+new_session
+  send_keys 'cd project' Enter
+  send_keys 'reset' Enter
+  TMUX split-window -v -l $H_LINES \; resize-pane -y 50
+  send_keys 'cd project2; reset' Enter
+  TMUX split-window -v -l $V_LINES \; resize-pane -y 50
+  send_keys 'cd project3; reset' Enter
+SESS_NAME=nginx
+new_session
+  send_keys 'cd nginx; reset' Enter
+
+# no client should be attached, if so, force detach it and attach a new one
+tmux attach-session -d -t main
+EOF
+}; export create_tmux_init
+
+function install_lessfilter() {
+  mkdir -p ~/my_local/bin/
+  cat << 'EOF' > ~/my_local/bin/lessfilter
+#!/bin/sh
+
+F=`realpath "$1"`
+F=`basename "$F"`
+
+case "$F" in
+  *.awk| \
+  *.[ch]pp| \
+  *.[ch]xx| \
+  *.[ch]| \
+  *.cc| \
+  *.hh| \
+  *.ad[asb]| \
+  *.asm| \
+  *.axp| \
+  *.diff| \
+  *.ebuild| \
+  *.eclass| \
+  *.groff| \
+  *.inc| \
+  *.java| \
+  *.js| \
+  *.lsp| \
+  *.l| \
+  *.m4| \
+  *.pas| \
+  *.patch| \
+  *.php| \
+  *.pl| \
+  *.pm| \
+  *.pod| \
+  *.pov| \
+  *.ppd| \
+  *.py| \
+  *.p| \
+  *.rb| \
+  *.sh| \
+  *.sql| \
+  *.xml| \
+  *.xps| \
+  *.xsl)
+    pygmentize -f 256 -O style=monokai "$1"
+    ;;
+  .bashrc|\
+  .bash_aliases|\
+  .bash_environment|\
+  .profile)
+    pygmentize -f 256 -O style=monokai -l sh "$1"
+    ;;
+  .persistent_history)
+    pygmentize -l BQN -O style=monokai "$1"
+    ;;
+  *)
+    if head -n 1 "$1" | grep -q "#\!/bin/bash" 2>/dev/null
+    then
+      pygmentize -f terminal256 -O style=monokai -g sh "$1"
+    else
+      exit 1
+    fi
+esac
+
+exit 0
+EOF
+  chmod +x ~/my_local/bin/lessfilter
+}; export install_lessfilter
+
+function install_exchange_rate() {
+  mkdir -p ~/my_local/bin/
+  cat << 'EOF' > ~/my_local/bin/exchange-rate.sh
+#!/bin/bash
+
+curl --silent "https://www3.bcb.gov.br/bc_moeda/rest/converter/1/1/790/220/`date '+%Y-%m-%d'`" \
+  -H 'accept: application/xml' \
+  -H 'accept-language: en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7,it-IT;q=0.6,it;q=0.5,ja-JP;q=0.4,ja;q=0.3,el-GR;q=0.2,el;q=0.1,he-IL;q=0.1,he;q=0.1,zh-CN;q=0.1,zh;q=0.1' \
+  -H 'content-type: application/xml' \
+  -H 'origin: https://www.bcb.gov.br' \
+  -H 'priority: u=1, i' \
+  -H 'referer: https://www.bcb.gov.br/' \
+  -H 'sec-ch-ua: "Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"' \
+  -H 'sec-ch-ua-mobile: ?1' \
+  -H 'sec-ch-ua-platform: "Android"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: same-site' \
+  -H 'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36' \
+  | sed -e 's|.*<valor-convertido>||' -e 's|</valor-convertido>||'
+echo
+EOF
+chmod +x ~/my_local/bin/exchange-rate.sh
+
+}; export install_exchange_rate;
+
+function install_git_aware_prompt() {
+  local GIT_AWARE_PROMPT_PATH=~/.bash/git-aware-prompt
+  local GIT_AWARE_PROMPT_PARENT_DIR=~/.bash
+  if [ -d "$GIT_AWARE_PROMPT_PATH" ]
+  then
+    echo "Repo git-aware-prompt already installed. Updating it."
+    cd "$GIT_AWARE_PROMPT_PATH"
+    git pull origin `git rev-parse --abbrev-ref HEAD 2> /dev/null`
+    cd -
+  else
+    echo "Installing git-aware-prompt into "$GIT_AWARE_PROMPT_PATH"..."
+    mkdir -p "$GIT_AWARE_PROMPT_PARENT_DIR"
+    cd "$GIT_AWARE_PROMPT_PARENT_DIR"
+    git clone https://github.com/jimeh/git-aware-prompt.git
+    cd -
+    echo -e '!!! WARNING (git-aware-promtp) !!!\n' > /dev/stderr
+    echo -e 'Insert the following lines at the beginning of ~/.bashrc\n'
+    echo export GITAWAREPROMPT="$GIT_AWARE_PROMPT_PATH"
+    echo 'source "${GITAWAREPROMPT}/main.sh"'
+    echo 'export DOLLAR_COLOR=$txtrst'
+    echo 'machine=your-machine-name-here'
+    echo 'machine_color=$txtpur'
+    echo
+    echo 'Colored PS1 variable should be'
+    cat << 'EOF'
+PS1='${debian_chroot:+($debian_chroot)}\[${machine_color}\]${machine}\[${txtrst}\]:\[${bldblu}\]${HIDDEN_COUNTER}\w\[${txtrst}\]\[${txtcyn}\]${git_branch}\[${txtrst}\]\[${bldred}\]${git_dirty}\[${txtrst}\] \[${DOLLAR_COLOR}\]$\[${txtrst}\] '
+EOF
+    echo 'Non colored PS1 variable should be'
+    cat << 'EOF'
+PS1="${debian_chroot:+($debian_chroot)}${machine}:\W \$git_branch\$git_ignoring\$git_dirty\$ "
+EOF
+  fi
+}; export install_git_aware_prompt
+
+function install_pyenv() {
+  # Conditions to proceed with pyenv installation
+  # PYENV_ROOT environment variable is not set
+  # ~/.pyenv directory is not found
+  # pyenv binary is not found (implying pyenv virtualenv is not fount either)
+  if ! [ -n "${PYENV_ROOT:-}" ] && \
+     ! [ ls -a ~/ | grep -E '^.pyenv$' ] && \
+     ! pyenv --version > /dev/null 2>&1
+  then
+    echo -e 'Installing pyenv along with virtualenv plugin\n'
+    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+    echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bashrc
+    source ~/.bashrc
+
+    git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
+    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
+    source ~/.bashrc
+  elif pyenv virtualenv --version > /dev/null 2>&1
+  then
+    echo 'pyenv with virtualenv is already installed.'
+  else
+    echo Previous installation of pyenv with virtualenv is broken. > /dev/stderr
+    echo Please check it manually. > /dev/stderr
+  fi
+}; export install_pyenv
+
+function update_pyenv() {
+  if ! pyenv --version > /dev/null 2>&1; then
+    echo pyenv not found. > /dev/stderr
+    return 1
+  fi
+  cd `pyenv root` > /dev/null
+  git pull origin `git rev-parse --abbrev-ref HEAD 2> /dev/null`
+  cd - > /dev/null
+}
+
+function install_ansible() {
+  # A specific virtualenv is going to be created in order
+  # to have the latest ansible version.
+  # Latest check, python 3.12 supports ansible 9.3.0
+  # https://pypi.org/project/ansible/
+  #
+  local ANSIBLE_NEEDED_PYTHON_VERSION=3.12
+  local ANSIBLE_VIRT_ENV_NAME=ansible
+  local ANSIBLE_SUITABLE_PYTHON_VERSION=
+
+  if ! pyenv virtualenv --version > /dev/null 2>&1
+  then
+    echo pyenv must be install along with virtualenv plugin to proceed. > /dev/stderr
+    echo Aborting. > /dev/stderr
+    return 1
+  fi
+
+  if pyenv virtualenvs --bare | grep -q "$ANSIBLE_VIRT_ENV_NAME"
+  then
+    echo Virtual environment "$ANSIBLE_VIRT_ENV_NAME" is already present > /dev/stderr
+    echo If you want to reinstall it ansible, please remove it first > /dev/stderr
+    return 1
+  fi
+
+  pyenv uninstall --force "$ANSIBLE_VIRT_ENV_NAME"
+
+  echo Installing ansible in virtual environment called \'$ANSIBLE_VIRT_ENV_NAME\'.
+
+  ANSIBLE_SUITABLE_PYTHON_VERSION=`pyenv versions --skip-envs --skip-aliases --bare \
+   | grep -F "$ANSIBLE_NEEDED_PYTHON_VERSION" \
+   | sort -rn \
+   | tail -n 1`
+
+  if [ -n "$ANSIBLE_SUITABLE_PYTHON_VERSION" ]
+  then
+    echo Found a suitable python version installed: \"$ANSIBLE_SUITABLE_PYTHON_VERSION\"
+  else
+    echo No suitable python version installed has been found.
+    echo Ansible needs Python "$ANSIBLE_NEEDED_PYTHON_VERSION"
+    echo Updating pyenv
+    update_pyenv
+    echo Updated
+
+    ANSIBLE_PYTHON_CANDIDATE=`pyenv install -l \
+      | grep -F "$ANSIBLE_NEEDED_PYTHON_VERSION" \
+      | grep -oE '\<3\.[0-9]+\.[0-9]+\>' \
+      | sort -n \
+      | tail -n 1`
+
+    if ! [ -n "$ANSIBLE_PYTHON_CANDIDATE" ]
+    then
+      echo No candidate available for version "$ANSIBLE_NEEDED_PYTHON_VERSION". Aborting > /dev/stderr
+      return 1
+    else
+      echo Found candidate "$ANSIBLE_PYTHON_CANDIDATE"
+    fi
+
+    pyenv install "$ANSIBLE_PYTHON_CANDIDATE"
+    ANSIBLE_SUITABLE_PYTHON_VERSION=$ANSIBLE_PYTHON_CANDIDATE
+  fi
+
+  echo
+  echo "Creating virtualenv '$ANSIBLE_VIRT_ENV_NAME' -> $ANSIBLE_SUITABLE_PYTHON_VERSION"
+  pyenv virtualenv "$ANSIBLE_SUITABLE_PYTHON_VERSION" "$ANSIBLE_VIRT_ENV_NAME"
+  echo "Created virtualenv '$ANSIBLE_VIRT_ENV_NAME' -> $ANSIBLE_SUITABLE_PYTHON_VERSION."
+
+  pyenv activate "$ANSIBLE_VIRT_ENV_NAME"
+  pip install -U pip setuptools
+  pip install ansible
+  if ansible --version
+  then
+    echo "Successfully installed ansible in virtual environment '`pyenv version-name`'"
+  else
+    echo "Something has failed. Currently activated environment is '`pyenv version-name`'" > /dev/stderr
+  fi
+  pyenv deactivate
+}; export install_ansible
+
+## DOCKER
+function docker_stop_all() {
+  local RUNNING_CONTAINERS=`docker ps | tail -n +2 | awk '{print $1}' | tr '\n' ' '`
+  if echo -n "$RUNNING_CONTAINERS" | grep -iE '[a-e0-9]' > /dev/null; then
+    docker stop `docker ps | tail -n +2 | awk '{print $1}' | tr '\n' ' '`
+  fi
+}; export docker_stop_all
+
+function nassh() {
+	ssh -o IdentitiesOnly=yes -F /dev/null  $@
+}; export -f nassh
+function nascp() {
+	scp -o IdentitiesOnly=yes -F /dev/null  $@
+}; export -f nascp
+
+#alias killgpgagent='killall gpg-agent'
+#alias brz='w3m -dump -no-cookie http://www.horariodebrasilia.org/ | egrep "([0-9]{2}:?){3}"'
+#alias mmake='make -j 8'
+
+function makegif {
+  ffmpeg -i $1 -vf scale=640:-1 -r 10 -f image2pipe -vcodec ppm - \
+    | convert -delay 6 -loop 0 - $2.gif
+}; export -f makegif
+
+alias diff='diff --side-by-side --suppress-common-lines'
+
+function even() {
+  for(( i = 2; i <= $1; i += 2)) { echo -n "$i,"; }
+  echo
+}; export even
+
+function odd() {
+  for(( i = 1; i <= $1; i += 2)) { echo -n "$i,"; }
+  echo
+}; export odd
+
+function update_repos() {
+  local DIRECTORIES='~/.fzf ~/.pyenv ~/.pyenv/plugins/pyenv-virtualenv ~/.bash/git-aware-prompt'
+  for DIRECTORY in $DIRECTORIES
+  do
+    (
+      eval cd $DIRECTORY
+      # current branch
+      BRANCH=`git rev-parse --abbrev-ref HEAD 2> /dev/null`
+      printf 'Updating (%s) %s\n' $BRANCH `pwd`
+      git pull origin $BRANCH
+      printf '\n'
+    )
+    unset DIRECTORY
+  done
+
+  printf 'Done\n'
+}; export update_repos
+
+alias gut='git'
+alias got='git'
+alias cb='git rev-parse --abbrev-ref HEAD 2> /dev/null'
+alias pushcb='git push origin `cb`'
+alias pullcb='git pull origin `cb`'
+alias shit='git hist; git log --oneline'
+
+alias eip='curl ifconfig.co'
+alias eip_full='curl api.myip.com 2>/dev/null | python -m json.tool'
+alias pinga='{ ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo tranks; } || echo nope'
+alias pinganimim='{ ping -c 1 uol.com.br > /dev/null 2>&1 && echo tranks; } || echo nope'
+alias veio-barreiro='pinga && pinganimim'
+
+function t() {
+  SESSION_NAME=main
+  if tmux list-sessions 2> /dev/null 1>&2; then
+    echo Sessions running
+    return
+  fi
+  wmctrl -r ":ACTIVE:" -b add,fullscreen
+  ~/.tmux.init
+}
+
+alias pgrep='pgrep -l'
+
+alias clean_pip='for pack in `pip freeze`; do pip uninstall -y ${pack%%==*}; done'
+alias pip_thanos='pip uninstall -y `pip freeze | tr "\n" " "`'
+
+alias dc='docker compose'
+alias dcx='docker compose exec'
+
+alias fless='LESS="" LESSOPEN="" less'
+
+# enc file -> outputs file.gpg
+alias enc='gpg -c --s2k-mode 3 --s2k-count 65011712 --s2k-digest-algo SHA512 --s2k-cipher-algo AES256'
+alias resolutions='echo -e "256x144\n640x360\n1280x720\n1920x1080"'
+
+function extract_audio() {
+  local FILE_IN=$1
+  local FILE_OUT=$2
+  if test -z "$FILE_IN" -o -z "$FILE_OUT";
+  then
+    echo 'extract_audio <input> <output>'
+    return
+  fi
+  ffmpeg -i "$FILE_IN" -vn -acodec copy "$FILE_OUT"
+}; export extract_audio
+### [END COMMON]
+set nocompatible		" disable VI compatibility
+
+filetype plugin on
+
+call plug#begin('~/.vim/plugged')
+Plug 'igormorgado/vim-tbone'
+Plug 'scrooloose/nerdcommenter'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
+Plug 'terryma/vim-multiple-cursors'
+call plug#end()
+
+"""""
+" Let cursor always centralized when scrolling
+augroup VCenterCursor
+  au!
+  au BufEnter,WinEnter,WinNew,VimResized *,*.*
+        \ let &scrolloff=winheight(win_getid())/2
+augroup END
+"""""
+
+syntax enable
+colorscheme elflord
+
+" Custom set of words to be highlighted
+highlight CUSTOM_WORDS ctermbg=darkblue
+syntax keyword CUSTOM_WORDS test_highlight_1 test_highlight_2
+
+" Highlight redundant spaces and tabs
+highlight RedundantWhitespace ctermbg=gray guibg=gray
+match RedundantWhitespace /\s\+$\| \+\ze\t/
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          LETS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+let _backupdir="~/.vim/backup//"
+let _swapdir="~/.vim/swap//"
+let _undodir="~/.vim/undo//"
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          END LETS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          CREATING BACKUPS, SWAP, UNDO DIRS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+silent execute "!mkdir -p " _backupdir
+silent execute "!mkdir -p " _swapdir
+silent execute "!mkdir -p " _undodir
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          END CREATING BACKUPS, SWAP, UNDO DIRS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          SETS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+highlight OverLength ctermbg=red ctermfg=white guibg=#592929
+"match OverLength /\%81v.\+/
+
+set incsearch
+set mouse=a
+set ai sm js
+set showcmd showmode
+set nu					" number lines
+set ts=2				" set where tab stops
+set sw=2				" set indentation
+set st=2				" tab size
+set et					" replace tab for spaces
+retab					" replace tab for spaces where tab is already present
+set ruler				" show cursor place
+"set visualbell
+"set errorbells
+set novisualbell
+set noerrorbells
+set backup
+execute "set backupdir="._backupdir
+set swapfile
+execute "set directory="._swapdir
+set undofile
+execute "set undodir="._undodir
+"set nobackup
+set title                               " show file name on title bar
+"set textwidth=80                       " automatically break line when hits column 80
+set undolevels=5000                     " 5000 action history should be enough
+set updatetime=6000                     " save on swap if idle for 6 seconds
+set updatecount=20                      " save on swap after 20 characters
+highlight ColorColumn ctermbg=0 guibg=lightgrey
+set colorcolumn=81
+set cursorcolumn
+"set expandtab
+
+" set bash as terminal
+let &shell="bash"
+set clipboard=autoselect
+
+" The following code formats status bar
+" Show ascii code of the current char among other things
+set statusline=%F%m%r%h%w\ [%{&ff}/%Y]\ [HEX=\%02.2B]\ [COL=%04v]\ [LINES=%02p%%/%L]
+" Always display status bar
+set laststatus=2
+set splitright " splita na direita em vez da esquerda
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          END  SETTINGS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          MAPPINGS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+"map <F2> Co-authored-by: Name1 Surname1 <email1@domain1.com>
+"imap <F2> Co-authored-by: Name1 Surname1 <email1@domain1.com>
+"map <F3> Co-authored-by: Name2 Surname2 <email2@domain2.com>
+"imap <F3> Co-authored-by: Name2 Surname2 <email2@domain2.com>
+
+"/*--------------------------------------------------------------------------*/
+
+"map <F6> :set spell spelllang=pt<cr>
+"imap <F6> /*????????????????????????????????????????????????????*/<cr>
+"		\/*????????????????????????????????????????????????????*/
+
+"/*--------------------------------------------------------------------------*/
+
+" Map F7 to print debug messages debug
+imap <F7> printf("hello world\n");
+
+"/*--------------------------------------------------------------------------*/
+
+" Map F8 to print bash header
+"map <F8> ggO#!/bin/bash
+"         \<c-o>:r!echo %<cr># <c-o>o
+"         \# PLACE_NAME_HERE<cr>
+
+
+"/*--------------------------------------------------------------------------*/
+
+" Compile source and gets back to vim
+" map <F9> :!clear; EXECUTABLE=$(echo % | sed -r 's/(.*)\.[^.]+$/\1/');
+"           \gcc -o $EXECUTABLE %<crinclude <strings.h> >;
+
+"/*--------------------------------------------------------------------------*/
+
+"map <F10> :!EXECUTABLE=$(echo "%" | sed -r 's/(.*)\.[^.]+$/\1/'); ./$EXECUTABLE<cr>
+
+"/*--------------------------------------------------------------------------*/
+
+" Remove white spaces at the end of lines
+nmap <F3> :%s/\s\+$//e
+
+"/*--------------------------------------------------------------------------*/
+
+" Reload vim so that .vimrc changes take place
+nmap <F12> :<C-u>source ~/.vimrc <BAR> echo "Vimrc reloaded!"<CR>
+map ,u :source ~/.vimrc<CR>	" Reload .vimrc
+map ,v :e ~\.vimrc<CR>		" Edit .vimrc
+
+" Push the current line to the other tmux screen (interactive)
+inoremap <F4> <ESC>:Texec<CR>j<Insert>
+nnoremap <F4>	   :Texec<CR>j
+vnoremap <F4> :Texec<CR>j
+
+"/*--------------------------------------------------------------------------*/
+
+" Display searches in the middle of the screen
+map n nzz
+nmap N Nzz
+"nmap * *zz
+"nmap # #zz
+"nmap g* g*zz
+"nmap g# g#zz
+
+"/*--------------------------------------------------------------------------*/
+
+" Shortcuts
+"iab forc for (i= ; ; i++)
+"iab whi  while ()
+
+"/*--------------------------------------------------------------------------*/
+
+"====== word autocomplete ====
+" Use tab in "insert mode" to complete words
+function! InsertTabWrapper(direction)
+	let col = col('.') - 1
+	if !col || getline('.')[col - 1] !~ '\k'
+		return "\<tab>"
+	elseif "backward" == a:direction
+		return "\<c-p>"
+	else
+		return "\<c-n>"
+	endif
+endfunction
+
+"inoremap <tab> <c-r>=InsertTabWrapper ("forward")<cr>
+inoremap <s-tab> <c-r>=InsertTabWrapper ("forward")<cr>
+
+"/*--------------------------------------------------------------------------*/
+
+" Remove cursor char with Backspace
+map <BS> X
+
+" Window mapping
+"map <C-J> <C-W>j<C-W>_
+"map <C-K> <C-W>k<C-W>_
+"set wmh=0
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"          END MAPPINGS
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Toggle highlights using [SHIFT + F11]
+nno <S-F11> :set hls!<bar>set hls?<CR>
+
+
+" Enable file type detection
+" Use the default filetype settings, so that mail gets 'tw' set to 72,
+" 'cindent' is on in C files, etc.
+" Also load indent files, to automatically do language-dependent indenting.
+filetype plugin indent on
+
+
+"/*--------------------------------------------------------------------------*/
+
+" Automatically add execution permission to some script file types
+au BufWritePost *.sh,*.pl :!chmod +x <afile>
+" with #!/usr/bin/perl and #!/bin/sh
+"au BufWritePost * if getline(1) =~ "^#!/bin/[a-z]*sh" ||
+"				   \ getline(1) =~ "^#!/usr/bin/perl" | silent execute
+
+"/*--------------------------------------------------------------------------*/
+"Tests shell script syntax
+:function ValidateBashSyntax()
+:  !bash -n %
+:endfunction
+:command ValidateBashSyntax call ValidateBashSyntax()
+"/*--------------------------------------------------------------------------*/
+
+" Remove Ctrl+M at the end of the line (DOS files)
+" Not working very well
+if has("user_commands")
+	com! RemoveCtrlM :%s/^M/\r/g
+	" change to directory of current file
+	"com! CD cd %:p:h
+endif
+
+"/*--------------------------------------------------------------------------*/
+
+" When editing a file, open when last edited
+autocmd BufReadPost *
+	\ if line("'\"") > 0 && line("'\"") <= line("$") |
+	\   exe "normal g`\"" |
+	\ endif
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"            HEX EDITOR
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Placing the following code in your vimrc will provide a :Hexmode ex command
+" to toggle xxd hex mode on or off. It will keep track of what mode you are in,
+" so you don't have to. This ex command is easy to map like this:
+
+nnoremap <C-H> :Hexmode<CR>
+inoremap <C-H> <Esc>:Hexmode<CR>
+vnoremap <C-H> :<C-U>Hexmode<CR>
+
+" Note that <C-H> is already a defined command, so override it with care
+" (or use a different left hand side to the mapping). See :help CTRL-H,
+" :help i_CTRL-H, :help v_CTRL-H. Also, you may need to use gvim to distinguish
+" between <C-H> and <BS>.
+
+" ex command for toggling hex mode - define mapping if desired
+command -bar Hexmode call ToggleHex()
+
+" helper function to toggle hex mode
+function ToggleHex()
+	" hex mode should be considered a read-only operation
+	" save values for modified and read-only for restoration later,
+	" and clear the read-only flag for now
+	let l:modified=&mod
+	let l:oldreadonly=&readonly
+	let &readonly=0
+	let l:oldmodifiable=&modifiable
+	let &modifiable=1
+	if !exists("b:editHex") || !b:editHex
+		" save old options
+		let b:oldft=&ft
+		let b:oldbin=&bin
+		" set new options
+		setlocal binary " make sure it overrides any textwidth, etc.
+		let &ft="xxd"
+		" set status
+		let b:editHex=1
+		" switch to hex editor
+		" -g 16 modifica quantos bytes ficam agrupados
+		%!xxd -g 16
+	else
+		" restore old options
+		let &ft=b:oldft
+		if !b:oldbin
+			setlocal nobinary
+		endif
+		" set status
+		let b:editHex=0
+		" return to normal editing
+		%!xxd -r
+	endif
+	" restore values for modified and read only state
+	let &mod=l:modified
+	let &readonly=l:oldreadonly
+	let &modifiable=l:oldmodifiable
+endfunction
+
+" Below is some code for your vimrc that does all of this, making use of the
+" command we define above:
+" autocmds to automatically enter hex mode and handle file writes properly
+if has("autocmd")
+	" vim -b : edit binary using xxd-format!
+	augroup Binary
+	au!
+	au BufReadPre *.bin,*.hex setlocal binary
+	au BufReadPost *
+		  \ if &binary | Hexmode | endif
+	au BufWritePre *
+		\ if exists("b:editHex") && b:editHex && &binary |
+		\	 let oldro=&ro | let &ro=0 |
+		\	 let oldma=&ma | let &ma=1 |
+		\	 exe "%!xxd -r" |
+		\	 let &ma=oldma | let &ro=oldro |
+		\	 unlet oldma | unlet oldro |
+		\ endif
+	au BufWritePost *
+		\ if exists("b:editHex") && b:editHex && &binary |
+		\	let oldro=&ro | let &ro=0 |
+		\	let oldma=&ma | let &ma=1 |
+		\	exe "%!xxd" |
+		\	exe "set nomod" |
+		\	let &ma=oldma | let &ro=oldro |
+		\	unlet oldma | unlet oldro |
+		\ endif
+	augroup END
+endif
+
+" It would be nice if the user did not need to remember to convert back from
+" hex before saving changes to a binary file. Also, certain files are almost
+" always binary; it would be nice if Vim would pick up on this and automatically
+" enter an appropriate editing mode. The help files for Vim include the
+" following advice for automating the xxd-style hex editing capabilities for
+" Vim, in order to automate the conversion and automatically enter hex mode
+" for binary files:
+
+" vim -b : edit binary using xxd-format!
+augroup Binary
+	au!
+	au BufReadPre  *.bin let &bin=1
+	au BufReadPost *.bin if &bin | %!xxd
+	au BufReadPost *.bin set ft=xxd | endif
+	au BufWritePre *.bin if &bin | %!xxd -r
+	au BufWritePre *.bin endif
+	au BufWritePost *.bin if &bin | %!xxd
+	au BufWritePost *.bin set nomod | endif
+augroup END
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"
+"            END HEX EDITOR
+"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Useful aliases to close vim
+cab W w
+cab Q q
+cab Wq wq
+cab wQ wq
+cab WQ wq
+cab Wqw wq
+cab wqw wq
+
+
+
+"""""""""""""""""""
+"let g:netrw_banner = 0
+"let g:netrw_liststyle = 3
+"let g:netrw_browse_split = 2
+"let g:netrw_altv = 1
+"let g:netrw_winsize = 25
+"augroup ProjectDrawer
+"	autocmd!
+"		autocmd VimEnter * :Vexplore
+"	augroup END
+"""""""""""""""""""
+
+augroup remember_folds
+  autocmd!
+  autocmd BufWinLeave * mkview
+  autocmd BufWinEnter * silent! loadview
+augroup END
+
+" Command to insert Modeline magic
+command -nargs=+ Magic call InsertMagic(<f-args>)
+
+function InsertMagic(magic_type)
+	if a:magic_type ==? 'yml'
+		" Save current position
+		normal! mq
+
+		" Insert Modeline magic
+		execute "normal! \eGo\e|i# vim: set ts=2 st=2 sw=2 filetype=yaml expandtab: retab: \ed$"
+
+		" Get back to saved position and remove mark
+		normal! `qdq
+	else
+		echom 'Not mapped yet'
+	endif
+endfunction
+
+" add yaml stuffs
+"au! BufNewFile,BufReadPost *.{yaml,yaml.j2,yml,yml.j2} set filetype=yaml foldmethod=indent
+"autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
+------------------------------------
+inicio bashrc
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
+
+# terminal bell
+if [ -n "$DISPLAY" ]; then
+  xset b off
+fi
+
+export GITAWAREPROMPT=~/.bash/git-aware-prompt
+source "${GITAWAREPROMPT}/main.sh"
+export DOLLAR_COLOR=$txtrst
+machine=btg
+machine_color=$txtpur
+set -o vi
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+
+################################################################################
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+if [[ "$HISTCONTROL" != "" ]]; then
+	printf 'WARNING: HISTCONTROL is not empty [%s]\n' $HISTCONTROL
+fi
+HISTCONTROL=ignoreboth:removedups
+
+if [[ "$HISTIGNORE" != "" ]]; then
+	printf 'WARNING: HISTIGNORE is not empty [%s]. ' $HISTIGNORE
+	printf 'Setting this will bug persistent_history.\n'
+fi
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=-1
+HISTFILESIZE=-1
+################################################################################
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
+    else
+	color_prompt=
+    fi
+fi
+
+################################################################################
+export PROMPT_DIRTRIM=1
+hidden_counter() {
+	local HIDDEN_DIRECTORIES=$(( `dirname $PWD | tr '/' '\n' | wc -l` - 3 ))
+	HIDDEN_COUNTER=''
+	if (( HIDDEN_DIRECTORIES + 1 > PROMPT_DIRTRIM)); then
+		HIDDEN_COUNTER=`echo "($HIDDEN_DIRECTORIES)"`
+	fi
+}
+dollar_color() {
+  if [ $? -eq 0 ]; then
+    export DOLLAR_COLOR=$txtrst
+  else
+    export DOLLAR_COLOR=$txtred
+  fi
+}
+
+if [ "$color_prompt" = yes ]; then
+  PS1='${debian_chroot:+($debian_chroot)}\[${machine_color}\]${machine}\[${txtrst}\]:\[${bldblu}\]${HIDDEN_COUNTER}\w\[${txtrst}\]\[${txtcyn}\]${git_branch}\[${txtrst}\]\[${bldred}\]${git_dirty}\[${txtrst}\] \[${DOLLAR_COLOR}\]$\[${txtrst}\] '
+
+else
+  PS1="${debian_chroot:+($debian_chroot)}${machine}:\W \$git_branch\$git_ignoring\$git_dirty\$ "
+fi
+PROMPT_COMMAND="hidden_counter; $PROMPT_COMMAND"
+################################################################################
+
+unset color_prompt force_color_prompt
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# some more ls aliases
+#alias ll='ls -l'
+#alias la='ls -A'
+#alias l='ls -CF'
+
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+
+################################################################################
+bind Space:magic-space
+export EDITOR=vim
+
+# LESSOPEN
+export LESSOPEN='|~/my_local/bin/lessfilter %s'
+export LESS="--LONG-PROMPT --LINE-NUMBERS --ignore-case --QUIET --status-column --RAW-CONTROL-CHARS --LONG-PROMPT"
+# LESSOPEN END
+
+
+# GPG
+#if [ ! -f /tmp/gpg-agent.env ]; then
+#    killall gpg-agent;
+#    eval $(gpg-agent --daemon --enable-ssh-support > /tmp/gpg-agent.env);
+#fi
+#. /tmp/gpg-agent.env
+#ssh-add
+
+
+# Set GPG TTY
+#export GPG_TTY=$(tty)
+
+# Refresh gpg-agent tty in case user switches into an X session
+#gpg-connect-agent updatestartuptty /bye >/dev/null
+# GPG END
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+export FZF_COMPLETION_TRIGGER=',,'
+
+export PATH=$PATH:$HOME/.local/bin/:$HOME/my_local/bin
+
+# https://superuser.com/questions/1075404/how-can-i-restart-gpg-agent/1150399
+alias reload_gpg_agent='gpg-connect-agent reloadagent /bye'
+alias reload_gpg_agent_bruto='gpgconf --kill gpg-agent'
+# https://www.fsij.org/doc-gnuk/stop-scdaemon.html
+alias reload_gpg_agent_and_scd='reload_gpg_agent && gpg-connect-agent "SCD KILLSCD" "SCD BYE" /bye'
+
+
+if [[ "$HISTTIMEFORMAT" != "" ]]; then
+	printf 'WARNING: HISTTIMEFORMAT is not empty [%s]\n' $HISTTIMEFORMAT
+fi
+log_bash_persistent_history()
+{
+	[[ `history 1` =~ ^\ *([0-9]+)\ (.*)$ ]]
+	local CMD_NO=${BASH_REMATCH[1]}
+	local CMD=${BASH_REMATCH[2]}
+	CMD=`echo $CMD | sed -r 's/^\ *//'`
+	local TIMESTAMP=`date '+(%Z) %F %T' -u`
+	local S='׀'
+	if echo $CMD | grep -q '׀'; then
+		# THIS IS NOT A PIPE |
+	    # ׀ is UTF-8 HEBREW PUNCTUATION PASEQ (U+05C0)d780
+		printf "ERROR: Char '׀' detected in command line. This command "
+		printf 'will no be stored in ~/.persistent_history.\n'
+	else
+		echo ${BASHPID}${S}${TIMESTAMP}${S}${CMD_NO}${S}${CMD} >> ~/.persistent_history
+	fi
+}
+PROMPT_COMMAND="dollar_color; log_bash_persistent_history; $PROMPT_COMMAND"
+
+source $HOME/.asdf/asdf.sh
+source $HOME/.asdf/completions/asdf.bash
+
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
