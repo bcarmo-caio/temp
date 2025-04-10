@@ -1648,3 +1648,78 @@ export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
+[user]
+	name = nnnn
+  email = eeeeeeeeee
+	#signingkey = ssssssssssssss
+
+[merge]
+	tool = meld
+	prompt = false
+
+[diff]
+	guitool = meld
+	prompt = false
+
+[color]
+    ui = true
+
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+
+[color "status"]
+    added = yellow
+    changed = green
+    untracked = red
+
+[alias]
+	track-ignore-temporarily = update-index --assume-unchanged
+	track-again = update-index --no-assume-unchanged
+	ignored = !git ls-files -v `git rev-parse --show-toplevel` | grep '^[a-z]'
+	br = branch
+	blog = log --graph --oneline --decorate --all
+	st = status
+	sl = stash list
+	co = checkout
+	vlog = !gitk
+	last = log -1 HEAD
+	hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+	fall = fetch -a -p
+	sshow = "!f() { git stash show -p stash@{/$*}; }; f"
+	sapply = "!f() { git stash apply stash^{/$*}; }; f"
+	ssave = stash save
+	po = pull origin
+  update-modules = submodule update --recursive
+	cb = rev-parse --abbrev-ref HEAD
+	rcb = "!f() { git cb | awk -F'/' '{print $1}'; }; f"
+	comain = "!f() { git co `git rcb`/main; }; f"
+	co-stash-top-and-pop = "!f() { git co `git stash list\
+		| sed -r 's/^stash@\\{[0-9]\\}+: On //'\
+		| awk -F':' '{print $1}'` && git stash pop; }; f"
+	stash-apply-requirements = "!f() { git stash apply \
+		`git log -g stash --grep=': requirements.txt arrumado$' \
+			--pretty=format:'%gd'`; }; f"
+	stash-apply-new-approve-loan = "!f() { git stash apply \
+		`git log -g stash --grep=': adds add-offers-at-approved-command-line$' \
+			--pretty=format:'%gd'`; }; f"
+	remove-gone-branches = "!f() { git branch -vv \
+		| grep 'origin/.*: gone]' \
+		| awk '{print $1}' \
+		| xargs git branch -d; }; f"
+	remove-gone-branches-force = "!f() { git branch -vv \
+		| grep 'origin/.*: gone]' \
+		| awk '{print $1}' \
+		| xargs git branch -D; }; f"
+[core]
+	pager = less -x1,5
+
+#[commit]
+#	gpgsign = true
